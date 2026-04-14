@@ -1,7 +1,15 @@
 # Production Deployment Checklist
 
-## Environment Variables (Required)
-Add these to your hosting platform:
+## 1. Create Vercel KV Database
+1. Go to your Vercel project dashboard
+2. Navigate to **Storage** tab
+3. Click **Create Database** → **KV**
+4. Name it (e.g., "cres-notify-kv")
+5. Click **Create**
+6. Vercel will automatically add `KV_*` env vars to your project
+
+## 2. Environment Variables
+Add these to your Vercel project (Settings → Environment Variables):
 
 ```
 VAPID_PUBLIC_KEY=BCZRoicds4wyk3vIDug3nVIfJ2iBHyTgkzpSzC-y495_2ifcCAnjtMe-PQ2D5OPc8qPc2TEjo6AcYV-9iwTxn-0
@@ -9,29 +17,25 @@ VAPID_PRIVATE_KEY=rTDa8s17_PodbEQS-vO55r3TYMIzehc4IAcm9lmhjYo
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=BCZRoicds4wyk3vIDug3nVIfJ2iBHyTgkzpSzC-y495_2ifcCAnjtMe-PQ2D5OPc8qPc2TEjo6AcYV-9iwTxn-0
 ```
 
-## Deploy Commands
-- Build: `npm run build`
-- Start: `npm run start`
-
-## Set Up Cron Job
-After deployment, configure a cron job to check results:
-
-**URL to hit:** `https://your-domain.com/api/check-results`
-
-**Recommended schedule:** Every 30 minutes during result season
-```
-*/30 * * * * curl https://your-domain.com/api/check-results
+## 3. Deploy
+```bash
+git add .
+git commit -m "Switch to Vercel KV storage"
+git push
 ```
 
-**Options:**
-- Vercel Cron (add `vercel.json` with cron config)
-- GitHub Actions (scheduled workflow)
-- External: cron-job.org, EasyCron
+## 4. Set Up Cron Job
+Create `vercel.json` in project root:
+```json
+{
+  "crons": [{
+    "path": "/api/check-results",
+    "schedule": "*/30 * * * *"
+  }]
+}
+```
 
-## Important Notes
-- `subscriptions.json` stores user data locally
-- For Vercel/serverless: File won't persist - consider switching to a database
-- For VPS/traditional hosting: Works perfectly as-is
+Then redeploy. Vercel will automatically run the cron job every 30 minutes.
 
 ## Ready to Deploy ✅
-All code is production-ready. Just add env vars and set up the cron job.
+All code is now serverless-compatible with Vercel KV storage.

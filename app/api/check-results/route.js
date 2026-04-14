@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
-import fs from 'fs';
-import path from 'path';
+import { kv } from '@vercel/kv';
 
 webpush.setVapidDetails(
   'mailto:cbse-notify@example.com',
@@ -10,13 +9,13 @@ webpush.setVapidDetails(
 );
 
 export async function GET() {
-  const dataPath = path.join(process.cwd(), 'subscriptions.json');
+  const keys = await kv.keys('sub:*');
   
-  if (!fs.existsSync(dataPath)) {
+  if (!keys.length) {
     return NextResponse.json({ message: 'No subscriptions' });
   }
 
-  const subscriptions = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  const subscriptions = await kv.mget(...keys);
   const currentYear = new Date().getFullYear().toString();
   
   try {
@@ -29,7 +28,7 @@ export async function GET() {
       });
 
       const notifications = subscriptions
-        .filter(sub => sub.year === currentYear)
+        .filter(sub => sub?.year === currentYear)
         .map(sub => webpush.sendNotification(sub.subscription, payload).catch(err => console.error(err)));
 
       await Promise.all(notifications);
