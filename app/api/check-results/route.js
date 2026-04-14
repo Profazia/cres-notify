@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 webpush.setVapidDetails(
   'mailto:cbse-notify@example.com',
@@ -9,13 +14,13 @@ webpush.setVapidDetails(
 );
 
 export async function GET() {
-  const keys = await kv.keys('sub:*');
+  const keys = await redis.keys('sub:*');
   
   if (!keys.length) {
     return NextResponse.json({ message: 'No subscriptions' });
   }
 
-  const subscriptions = await kv.mget(...keys);
+  const subscriptions = await redis.mget(...keys);
   const currentYear = new Date().getFullYear().toString();
   
   try {

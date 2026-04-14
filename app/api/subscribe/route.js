@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 export async function POST(request) {
   const { subscription, year } = await request.json();
-  
-  const key = `sub:${Date.now()}:${year}`;
-  await kv.set(key, { subscription, year, createdAt: new Date().toISOString() });
-  
+  await redis.set(`sub:${Date.now()}:${year}`, { subscription, year });
   return NextResponse.json({ success: true });
 }
